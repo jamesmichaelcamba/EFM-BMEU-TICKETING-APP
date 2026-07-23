@@ -5,7 +5,6 @@ import {
   Ticket,
   PlusCircle,
   LogOut,
-  Stethoscope,
   ChevronLeft,
   ChevronRight,
   User,
