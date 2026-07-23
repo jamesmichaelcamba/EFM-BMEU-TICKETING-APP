@@ -32,7 +32,7 @@ function formatDate(iso: string) {
 function exportCSV(tickets: Ticket[]) {
   const headers = [
     'Ticket #', 'Type', 'Title', 'Category', 'Priority', 'Status',
-    'Department', 'Equipments', 'Due Date', 'Created At', 'Resolved At',
+    'Department', 'Equipments', 'Due Date', 'Created By', 'Assigned To', 'Created At', 'Resolved At',
   ]
   const rows = tickets.map((t) => {
     const eqStr = (t.equipments || []).map(e => [e.name, e.brand, e.model, e.serial].filter(Boolean).join(' ')).join(' | ')
@@ -46,6 +46,8 @@ function exportCSV(tickets: Ticket[]) {
       t.department ?? '',
       `"${eqStr.replace(/"/g, '""')}"`,
       t.due_date ?? '',
+      t.reporter?.full_name ?? '',
+      t.assignee?.full_name ?? '',
       t.created_at,
       t.resolved_at ?? '',
     ]
@@ -80,7 +82,7 @@ export default function TicketsPage() {
     setLoading(true)
     let query = supabase
       .from('tickets')
-      .select('*, category:categories(id,name,is_custom,created_at)', { count: 'exact' })
+      .select('*, category:categories(id,name,is_custom,created_at), reporter:profiles!tickets_reported_by_fkey(full_name), assignee:profiles!tickets_assigned_to_fkey(full_name)', { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
@@ -249,15 +251,16 @@ export default function TicketsPage() {
                 <th className="text-left px-5 py-3.5 font-medium">Priority</th>
                 <th className="text-left px-5 py-3.5 font-medium">Status</th>
                 <th className="text-left px-5 py-3.5 font-medium">Department</th>
-                <th className="text-left px-5 py-3.5 font-medium">Due Date</th>
-                <th className="text-left px-5 py-3.5 font-medium">Created</th>
+                <th className="text-left px-5 py-3.5 font-medium">Assignee</th>
+                <th className="text-left px-5 py-3.5 font-medium">Created By</th>
+                <th className="text-left px-5 py-3.5 font-medium">Created At</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-efm-bg-200">
               {loading
                 ? Array.from({ length: 6 }).map((_, i) => (
                     <tr key={i}>
-                      {Array.from({ length: 8 }).map((_, j) => (
+                      {Array.from({ length: 9 }).map((_, j) => (
                         <td key={j} className="px-5 py-4">
                           <div className="h-4 bg-efm-bg-200 rounded animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
                         </td>
@@ -288,8 +291,11 @@ export default function TicketsPage() {
                       <td className="px-5 py-3.5 text-efm-text-500 text-xs whitespace-nowrap">
                         {ticket.department ?? '—'}
                       </td>
-                      <td className="px-5 py-3.5 text-efm-text-500 text-xs whitespace-nowrap">
-                        {ticket.due_date ? formatDate(ticket.due_date) : '—'}
+                      <td className="px-5 py-3.5 text-efm-text-500 text-xs truncate max-w-[120px]">
+                        {ticket.assignee?.full_name ?? '—'}
+                      </td>
+                      <td className="px-5 py-3.5 text-efm-text-500 text-xs truncate max-w-[120px]">
+                        {ticket.reporter?.full_name ?? '—'}
                       </td>
                       <td className="px-5 py-3.5 text-efm-text-400 text-xs whitespace-nowrap">
                         {formatDate(ticket.created_at)}

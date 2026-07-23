@@ -65,6 +65,7 @@ export default function TicketDetailPage() {
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [staff, setStaff] = useState<Profile[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -78,7 +79,7 @@ export default function TicketDetailPage() {
   const load = useCallback(async () => {
     if (!id) return
     setLoading(true)
-    const [{ data: t }, { data: c }, { data: cats }] = await Promise.all([
+    const [{ data: t }, { data: c }, { data: cats }, { data: staffData }] = await Promise.all([
       supabase
         .from('tickets')
         .select('*, category:categories(id,name,is_custom,created_at), reporter:profiles!tickets_reported_by_fkey(id,work_id,full_name,role,created_at), assignee:profiles!tickets_assigned_to_fkey(id,work_id,full_name,role,created_at)')
@@ -90,10 +91,12 @@ export default function TicketDetailPage() {
         .eq('ticket_id', id)
         .order('created_at', { ascending: true }),
       supabase.from('categories').select('*').order('name'),
+      supabase.from('profiles').select('*').eq('status', 'Approved').order('full_name'),
     ])
     setTicket(t as Ticket)
     setComments((c as Comment[]) ?? [])
     setCategories((cats as Category[]) ?? [])
+    setStaff((staffData as Profile[]) ?? [])
     setLoading(false)
   }, [id])
 
@@ -111,6 +114,7 @@ export default function TicketDetailPage() {
       department: ticket.department,
       equipments: ticket.equipments || [],
       due_date: ticket.due_date,
+      assigned_to: ticket.assigned_to,
     })
     setEditing(true)
   }
@@ -525,6 +529,13 @@ export default function TicketDetailPage() {
                 <label className="label-field">Due Date</label>
                 <input type="date" className="input-field" value={editForm.due_date ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, due_date: e.target.value }))} style={{ colorScheme: 'dark' }} />
               </div>
+              <div>
+                <label className="label-field">Assign To</label>
+                <select className="select-field" value={editForm.assigned_to ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, assigned_to: e.target.value || null }))}>
+                  <option value="">Unassigned</option>
+                  {staff.map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+                </select>
+              </div>
             ) : (
               <dl className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -545,10 +556,14 @@ export default function TicketDetailPage() {
                 )}
                 {ticket.reporter && (
                   <div className="flex items-center justify-between">
-                    <dt className="text-xs text-efm-text-400 flex items-center gap-1.5"><User className="w-3.5 h-3.5" />Reporter</dt>
+                    <dt className="text-xs text-efm-text-400 flex items-center gap-1.5"><User className="w-3.5 h-3.5" />Created By</dt>
                     <dd className="text-xs text-efm-text-600">{ticket.reporter.full_name}</dd>
                   </div>
                 )}
+                <div className="flex items-center justify-between pt-2 border-t border-efm-bg-200">
+                  <dt className="text-xs text-efm-text-400 flex items-center gap-1.5"><User className="w-3.5 h-3.5" />Assignee</dt>
+                  <dd className="text-xs font-semibold text-efm-primary-600">{ticket.assignee?.full_name ?? <span className="text-efm-text-400 font-normal italic">Unassigned</span>}</dd>
+                </div>
               </dl>
             )}
           </div>

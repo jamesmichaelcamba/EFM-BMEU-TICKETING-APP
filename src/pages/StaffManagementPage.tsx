@@ -44,6 +44,19 @@ export default function StaffManagementPage() {
     }
   }
 
+  async function updateRole(userId: string, newRole: 'Admin' | 'Technician') {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role: newRole })
+      .eq('id', userId)
+
+    if (error) {
+      alert(`Error updating role: ${error.message}`)
+    } else {
+      loadUsers()
+    }
+  }
+
   const pendingUsers = users.filter(u => u.status === 'Pending')
   const approvedUsers = users.filter(u => u.status === 'Approved')
   const rejectedUsers = users.filter(u => u.status === 'Rejected')
@@ -55,9 +68,18 @@ export default function StaffManagementPage() {
           <h3 className="font-semibold text-efm-text-900">{u.full_name}</h3>
           <div className="flex items-center gap-3 text-sm text-efm-text-500 mt-1">
             <span className="font-mono bg-efm-bg-200 px-2 py-0.5 rounded text-efm-text-700">{u.work_id}</span>
-            <span className="flex items-center gap-1">
-              {u.role === 'Admin' ? <ShieldAlert className="w-3.5 h-3.5 text-amber-500" /> : <UserCheck className="w-3.5 h-3.5" />}
-              {u.role}
+            <span className="flex items-center gap-1 bg-efm-bg-100 px-2 py-0.5 rounded-lg border border-efm-bg-300">
+              {u.role === 'Admin' ? <ShieldAlert className="w-3.5 h-3.5 text-amber-500" /> : <UserCheck className="w-3.5 h-3.5 text-blue-500" />}
+              <select
+                value={u.role}
+                onChange={(e) => updateRole(u.id, e.target.value as 'Admin' | 'Technician')}
+                className="bg-transparent border-none text-xs font-semibold focus:ring-0 cursor-pointer p-0 pr-4 text-efm-text-700 disabled:opacity-50"
+                disabled={u.id === profile?.id}
+                title={u.id === profile?.id ? "You cannot change your own role" : "Change role"}
+              >
+                <option value="Technician">Technician</option>
+                <option value="Admin">Admin</option>
+              </select>
             </span>
           </div>
         </div>

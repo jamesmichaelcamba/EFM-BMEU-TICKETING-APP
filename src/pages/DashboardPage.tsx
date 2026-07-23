@@ -65,7 +65,7 @@ export default function DashboardPage() {
 
       const { data: recent } = await supabase
         .from('tickets')
-        .select('id, ticket_number, title, status, priority, type, department, created_at')
+        .select('id, ticket_number, title, status, priority, type, department, created_at, reporter:profiles!tickets_reported_by_fkey(full_name)')
         .order('created_at', { ascending: false })
         .limit(8)
 
@@ -340,7 +340,8 @@ export default function DashboardPage() {
                   <th className="text-left px-5 py-3 font-medium">Priority</th>
                   <th className="text-left px-5 py-3 font-medium">Status</th>
                   <th className="text-left px-5 py-3 font-medium">Department</th>
-                  <th className="text-left px-5 py-3 font-medium">Created</th>
+                  <th className="text-left px-5 py-3 font-medium">Created By</th>
+                  <th className="text-left px-5 py-3 font-medium">Created At</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-efm-bg-200">
@@ -367,6 +368,9 @@ export default function DashboardPage() {
                     </td>
                     <td className="px-5 py-3 text-efm-text-500 text-xs">
                       {ticket.department ?? '—'}
+                    </td>
+                    <td className="px-5 py-3 text-efm-text-500 text-xs truncate max-w-[120px]">
+                      {ticket.reporter?.full_name ?? '—'}
                     </td>
                     <td className="px-5 py-3 text-efm-text-400 text-xs">
                       {formatDate(ticket.created_at)}
