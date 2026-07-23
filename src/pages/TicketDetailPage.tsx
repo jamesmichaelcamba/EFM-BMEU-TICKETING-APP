@@ -22,7 +22,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { Ticket, Comment, Category, TicketStatus, Priority, TicketType } from '../lib/types'
+import { Ticket, Comment, Category, TicketStatus, Priority, TicketType, Profile } from '../lib/types'
 import {
   ZCMC_DEPARTMENTS,
   TICKET_TYPES,

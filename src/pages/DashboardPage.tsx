@@ -87,7 +87,7 @@ export default function DashboardPage() {
         })
       }
 
-      setRecentTickets((recent as TicketType[]) ?? [])
+      setRecentTickets((recent as unknown as TicketType[]) ?? [])
       setLoading(false)
     }
     load()
