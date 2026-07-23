@@ -57,6 +57,8 @@ export interface Ticket {
   created_at: string
   updated_at: string
   resolved_at: string | null
+  resolved_by: string | null
+  resolver?: Profile
   duplicate_of: string | null
   duplicate_ticket?: { ticket_number: string }
 }

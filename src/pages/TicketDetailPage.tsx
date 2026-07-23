@@ -83,7 +83,7 @@ export default function TicketDetailPage() {
     const [{ data: t }, { data: c }, { data: cats }, { data: staffData }] = await Promise.all([
       supabase
         .from('tickets')
-        .select('*, category:categories(id,name,is_custom,created_at), reporter:profiles!tickets_reported_by_fkey(id,work_id,full_name,role,created_at), assignee:profiles!tickets_assigned_to_fkey(id,work_id,full_name,role,created_at), duplicate_ticket:tickets!duplicate_of(ticket_number)')
+        .select('*, category:categories(id,name,is_custom,created_at), reporter:profiles!tickets_reported_by_fkey(id,work_id,full_name,role,created_at), assignee:profiles!tickets_assigned_to_fkey(id,work_id,full_name,role,created_at), resolver:profiles!tickets_resolved_by_fkey(id,work_id,full_name,role,created_at), duplicate_ticket:tickets!duplicate_of(ticket_number)')
         .eq('id', id)
         .single(),
       supabase
@@ -165,11 +165,15 @@ export default function TicketDetailPage() {
 
   async function updateStatus(newStatus: TicketStatus) {
     if (!ticket) return
+    const updatePayload: Record<string, any> = { status: newStatus }
+    if (newStatus === 'Resolved') {
+      updatePayload.resolved_by = profile?.id ?? null
+    }
     const { data, error } = await supabase
       .from('tickets')
-      .update({ status: newStatus })
+      .update(updatePayload)
       .eq('id', ticket.id)
-      .select('*, category:categories(id,name,is_custom,created_at), reporter:profiles!tickets_reported_by_fkey(id,work_id,full_name,role,created_at), assignee:profiles!tickets_assigned_to_fkey(id,work_id,full_name,role,created_at)')
+      .select('*, category:categories(id,name,is_custom,created_at), reporter:profiles!tickets_reported_by_fkey(id,work_id,full_name,role,created_at), assignee:profiles!tickets_assigned_to_fkey(id,work_id,full_name,role,created_at), resolver:profiles!tickets_resolved_by_fkey(id,work_id,full_name,role,created_at)')
       .single()
     if (error) {
       alert(`Error updating status: ${error.message}`)
@@ -619,6 +623,12 @@ export default function TicketDetailPage() {
                   <div className="flex items-center justify-between">
                     <dt className="text-xs text-efm-text-400 flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" />Resolved</dt>
                     <dd className="text-xs text-emerald-400">{formatDate(ticket.resolved_at)}</dd>
+                  </div>
+                )}
+                {ticket.resolver && (
+                  <div className="flex items-center justify-between">
+                    <dt className="text-xs text-efm-text-400 flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5" />Resolved By</dt>
+                    <dd className="text-xs font-semibold text-emerald-500">{ticket.resolver.full_name}</dd>
                   </div>
                 )}
                 {ticket.reporter && (
