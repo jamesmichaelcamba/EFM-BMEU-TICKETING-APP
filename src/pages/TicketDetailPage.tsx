@@ -19,7 +19,8 @@ import {
   CheckCircle,
   PlayCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  Copy
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Ticket, Comment, Category, TicketStatus, Priority, TicketType, Profile } from '../lib/types'
@@ -82,7 +83,7 @@ export default function TicketDetailPage() {
     const [{ data: t }, { data: c }, { data: cats }, { data: staffData }] = await Promise.all([
       supabase
         .from('tickets')
-        .select('*, category:categories(id,name,is_custom,created_at), reporter:profiles!tickets_reported_by_fkey(id,work_id,full_name,role,created_at), assignee:profiles!tickets_assigned_to_fkey(id,work_id,full_name,role,created_at)')
+        .select('*, category:categories(id,name,is_custom,created_at), reporter:profiles!tickets_reported_by_fkey(id,work_id,full_name,role,created_at), assignee:profiles!tickets_assigned_to_fkey(id,work_id,full_name,role,created_at), duplicate_ticket:tickets!tickets_duplicate_of_fkey(ticket_number)')
         .eq('id', id)
         .single(),
       supabase
@@ -115,6 +116,7 @@ export default function TicketDetailPage() {
       equipments: ticket.equipments || [],
       due_date: ticket.due_date,
       assigned_to: ticket.assigned_to,
+      duplicate_of: ticket.duplicate_ticket?.ticket_number ?? ticket.duplicate_of,
     })
     setEditing(true)
   }
@@ -123,15 +125,42 @@ export default function TicketDetailPage() {
     if (!ticket) return
     setSaving(true)
     const validEquipments = (editForm.equipments || []).filter(e => e.name || e.brand || e.model || e.serial)
+
+    // Resolve duplicate_of: if the user typed a ticket number, look up the UUID
+    let resolvedDuplicateOf: string | null = null
+    const dupInput = editForm.duplicate_of?.trim() ?? ''
+    if (dupInput) {
+      // Check if it looks like a UUID (already resolved) or a ticket number
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(dupInput)
+      if (isUuid) {
+        resolvedDuplicateOf = dupInput
+      } else {
+        const { data: found } = await supabase
+          .from('tickets')
+          .select('id')
+          .eq('ticket_number', dupInput.toUpperCase())
+          .single()
+        if (found) {
+          resolvedDuplicateOf = found.id
+        } else {
+          alert(`Ticket "${dupInput}" not found. Please check the ticket number and try again.`)
+          setSaving(false)
+          return
+        }
+      }
+    }
+
+    const updatePayload = { ...editForm, equipments: validEquipments, duplicate_of: resolvedDuplicateOf }
     const { data } = await supabase
       .from('tickets')
-      .update({ ...editForm, equipments: validEquipments })
+      .update(updatePayload)
       .eq('id', ticket.id)
       .select('*, category:categories(id,name,is_custom,created_at)')
       .single()
     if (data) setTicket(data as Ticket)
     setSaving(false)
     setEditing(false)
+    load()
   }
 
   async function updateStatus(newStatus: TicketStatus) {
@@ -267,6 +296,23 @@ export default function TicketDetailPage() {
         </div>
       )}
 
+      {/* Duplicate banner */}
+      {ticket.duplicate_of && !editing && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 p-3.5 rounded-xl shadow-sm">
+          <Copy className="w-4.5 h-4.5 text-amber-500 flex-shrink-0" />
+          <div className="text-sm text-amber-800">
+            <span className="font-semibold">Duplicate ticket.</span>{' '}
+            This ticket has been marked as a duplicate of{' '}
+            <Link
+              to={`/tickets/${ticket.duplicate_of}`}
+              className="font-mono font-semibold text-amber-600 hover:text-amber-500 underline underline-offset-2"
+            >
+              {ticket.duplicate_ticket?.ticket_number ?? 'another ticket'}
+            </Link>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* LEFT: Main details + Comments */}
         <div className="lg:col-span-2 space-y-5">
@@ -387,6 +433,25 @@ export default function TicketDetailPage() {
                     <option value="">No category</option>
                     {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
+                </div>
+                <div>
+                  <label className="label-field">Duplicate Of (Ticket #)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. TKT-20260723-0001"
+                    className="input-field font-mono text-sm"
+                    value={editForm.duplicate_of ?? ''}
+                    onChange={async (e) => {
+                      const val = e.target.value.trim()
+                      if (!val) {
+                        setEditForm((f) => ({ ...f, duplicate_of: null }))
+                        return
+                      }
+                      // Store the raw text; we'll resolve ticket_number -> id on save
+                      setEditForm((f) => ({ ...f, duplicate_of: val }))
+                    }}
+                  />
+                  <p className="text-xs text-efm-text-400 mt-1">Enter the ticket number of the original ticket, or leave blank to remove.</p>
                 </div>
               </>
             ) : (
