@@ -51,16 +51,17 @@ export default function Sidebar() {
 
       {/* Brand */}
       <div className="flex items-center gap-3 px-4 py-5 border-b border-efm-bg-400 overflow-hidden">
-        <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-efm-primary-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-efm-primary-500/20">
-          <Stethoscope className="w-5 h-5 text-white" />
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <img src="/efm-logo.webp" alt="EFM Logo" className="w-8 h-8 object-contain drop-shadow-sm" />
+          <img src="/bme-logo.png" alt="BMEU Logo" className="w-8 h-8 object-contain drop-shadow-sm" />
         </div>
         {!collapsed && (
           <div className="min-w-0 animate-fade-in">
-            <p className="text-[10px] font-bold text-efm-primary-500 tracking-[0.15em] uppercase leading-none">
-              ZCMC · BMEU
+            <p className="text-[13px] font-bold text-[#064e3b] uppercase leading-none">
+              EFM-BMEU
             </p>
-            <p className="text-sm font-semibold text-efm-text-900 leading-tight mt-0.5 truncate">
-              Ticketing System
+            <p className="text-[11px] font-semibold text-[#0284c7] uppercase tracking-wide leading-tight mt-1 truncate">
+              TICKETING APP
             </p>
           </div>
         )}
