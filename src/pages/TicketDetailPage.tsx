@@ -525,16 +525,18 @@ export default function TicketDetailPage() {
           <div className="bg-white border border-efm-bg-400 rounded-xl p-5 space-y-3">
             <h2 className="text-sm font-semibold text-efm-text-600">Dates</h2>
             {editing ? (
-              <div>
-                <label className="label-field">Due Date</label>
-                <input type="date" className="input-field" value={editForm.due_date ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, due_date: e.target.value }))} style={{ colorScheme: 'dark' }} />
-              </div>
-              <div>
-                <label className="label-field">Assign To</label>
-                <select className="select-field" value={editForm.assigned_to ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, assigned_to: e.target.value || null }))}>
-                  <option value="">Unassigned</option>
-                  {staff.map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}
-                </select>
+              <div className="space-y-4">
+                <div>
+                  <label className="label-field">Due Date</label>
+                  <input type="date" className="input-field" value={editForm.due_date ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, due_date: e.target.value }))} style={{ colorScheme: 'dark' }} />
+                </div>
+                <div>
+                  <label className="label-field">Assign To</label>
+                  <select className="select-field" value={editForm.assigned_to ?? ''} onChange={(e) => setEditForm((f) => ({ ...f, assigned_to: e.target.value || null }))}>
+                    <option value="">Unassigned</option>
+                    {staff.map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}
+                  </select>
+                </div>
               </div>
             ) : (
               <dl className="space-y-3">
