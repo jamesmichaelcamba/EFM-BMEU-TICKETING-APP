@@ -83,7 +83,7 @@ export default function TicketDetailPage() {
     const [{ data: t }, { data: c }, { data: cats }, { data: staffData }] = await Promise.all([
       supabase
         .from('tickets')
-        .select('*, category:categories(id,name,is_custom,created_at), reporter:profiles!tickets_reported_by_fkey(id,work_id,full_name,role,created_at), assignee:profiles!tickets_assigned_to_fkey(id,work_id,full_name,role,created_at), duplicate_ticket:tickets!tickets_duplicate_of_fkey(ticket_number)')
+        .select('*, category:categories(id,name,is_custom,created_at), reporter:profiles!tickets_reported_by_fkey(id,work_id,full_name,role,created_at), assignee:profiles!tickets_assigned_to_fkey(id,work_id,full_name,role,created_at), duplicate_ticket:tickets!duplicate_of(ticket_number)')
         .eq('id', id)
         .single(),
       supabase
